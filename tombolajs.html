@@ -1,0 +1,215 @@
+<!--
+* Tombola js 1.0
+* @copyright 	Copyright (c) 2011, Marco Moser
+* @author       Marco Moser <marco@marcomoser.it>
+* @version      23/12/2004 fix blink node
+* @version      09/08/2004 init
+* @version      13/8/11 new look
+*
+* license GPL 2 (http://www.gnu.org/copyleft/gpl.html)
+-->
+<html>
+<head>
+<style type="text/css">
+    body,table { font-family: Arial; }
+    body { color: #fff; text-align: center; border: 5px;  background-color: rgb(55, 139, 80); background-image: -moz-linear-gradient(left top, #999, #222); }
+    h1 { font-size: 170%; text-shadow: 0 2px 5px #999; letter-spacing: 7px; }
+    table { width: 90%; height: 500px; margin: 0 auto; }
+    td { text-align: center; font-size: 250%; cursor: pointer; background-color: #eee; color: #333; border-radius: 9px; }
+    td.blink { background-color: #FF6633; color: #FFFF99; }
+    td.on { color: #fff; background-color: #0000CC; }
+    textarea { color: white; background-color: #000; overflow: visible; font-weight: bold; width: 90%; }
+
+</style>
+<title>Tombola js</title>
+<script type="text/javascript">
+var orig;        // origin: '1','2',...'90'
+var hist;        // history: extracted
+function init()
+{
+    hist=new Array();
+    orig=new Array();
+    for(var ii=1;ii<=90;ii++)
+    {
+	orig.push(ii);
+    }
+}
+
+
+function BlinkNode(celnode,times,millis)
+{
+    this.celnode=celnode;
+    this.times=times;
+    this.millis=millis;
+    var self = this;
+    // blink the node
+    this.blink = function()
+    {
+	if (self.times % 2 == 0) self.celnode.className='on';
+	else self.celnode.className='blink';
+	if (self.times > 0)
+	{
+	    self.times--;
+	    setTimeout(self.blink,self.millis);
+	}
+	else self=null;
+    }
+}
+
+// select a nr [1 - 90]
+function selectNr(nn)
+{
+    // seleziona
+    var celnode=document.getElementById("nr"+nn);
+    celnode.className='on';
+
+    // toglie da orig
+    var idx=searchNr(orig,nn);
+    if (idx >= 0) orig.splice(idx,1);
+
+    // appende in hist
+    idx=searchNr(hist,nn);
+    if (idx == -1) hist.push(nn);
+
+    var cc=new BlinkNode(celnode,9,300);
+    cc.blink();
+
+    dumpHist();
+}
+// deselect a nr [1 - 90]
+function resetNr(nn)
+{
+    // deseleziona
+    var celnode=document.getElementById("nr"+nn);
+    celnode.className='';
+
+    // toglie da hist
+    var idx=searchNr(hist,nn);
+    if (idx>=0) hist.splice(idx,1);
+
+    // appende a orig
+    idx=searchNr(orig,nn);
+    if (idx==-1) orig.push(nn);
+
+    dumpHist();
+}
+// search in array
+// return position or -1 if not found
+function searchNr(aa,nn)
+{
+    for(var ii=0;ii<aa.length;ii++)
+    {
+	if (aa[ii]==nn) return ii;
+    }
+    return -1;
+}
+
+function dumpHist()
+{
+    var ii,ss='';
+    for(ii=0;ii<hist.length;ii++)
+    {
+	ss+=hist[ii]+' ';
+    }
+    document.getElementById('dumplist').innerHTML=ss;
+}
+
+// metodi esterni
+
+function choseMe(anode)
+{
+    var id=anode.id;
+    var nn=id.match(/\d+/)[0];
+    // e' meno probabile trovare un estratto
+    if (searchNr(hist,nn) == -1)
+    {
+    stampNumber(anode.id)
+	selectNr(nn);
+    }
+    else
+    {
+    stampNumber("")
+	resetNr(nn);
+    }
+
+}
+
+function extractRandom()
+{
+    var dbg;
+    var rr=1;
+    if (orig.length<=0) return; // e' tutto on
+
+    while(rr>=1) rr=Math.random();      // [0-1], toglie 1 x probabilita'
+    var idx=Math.floor(rr * orig.length);
+    var nn=orig[idx];
+
+    //document.forms["f1"].debug.value="rr="+rr+" idx="+idx+"/"+orig.length+" nn="+nn+" orig="+orig;
+
+    if (searchNr(hist,nn) == -1)
+    {
+
+    stampNumber(anode.id)
+	selectNr(nn);
+    }
+}
+// sullo spazio estrai a caso
+function manageKeyb()
+{
+    //var cc = String.fromCharCode(event.keyCode).toUpperCase();
+    //if (cc == ' ')
+    extractRandom();
+}
+function chgname()
+{
+    var name=prompt("Nome tombola","Tombola nr. ");
+    if (name) document.getElementById("tombtit").innerHTML=name;
+}
+init();
+document.onkeypress = manageKeyb;
+
+function tombola_writeln()
+{
+    var xx,yy,nr;
+    for(yy=0;yy<9;yy++)
+    {
+        document.writeln('<tr>');
+        for(xx=0;xx<10;xx++)
+        {
+            nr=yy*10+xx+1;
+            document.writeln('<td id="nr'+nr+'" onclick="choseMe(this)">'+nr+'</td>');
+        }
+        document.writeln('</tr>');
+    }
+}
+
+function stampNumber(anode){
+    i = 0
+    anode = String(anode)
+
+    if(anode.length == 3){
+        anode = anode[2]
+    }
+    if(anode.length == 4){
+        anode = anode[2] + anode[3]
+    }
+    if(anode == "NaN"){
+        anode = ""
+    }
+    document.getElementById('testo').innerHTML = anode
+}
+
+
+</script>
+<body>
+<h1 id="tombtit">FESTA ORATORIO 2022</h1>
+<table>
+<script type="text/javascript">tombola_writeln();</script>
+</table>
+
+<div>
+    <h2 id="testo" style="font-size: 150px;"></h2>
+</div>
+
+</body>
+</html>
